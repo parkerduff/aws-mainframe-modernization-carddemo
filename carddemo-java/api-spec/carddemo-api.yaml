@@ -1,0 +1,250 @@
+openapi: 3.0.3
+info:
+  title: CardDemo API
+  version: 1.0.0
+  description: >
+    Credit Card Demo Application - migrated from COBOL/CICS/VSAM mainframe
+    to Java 21 + Spring Boot + PostgreSQL. This API replaces the original
+    CICS online transactions and BMS screen-based interactions.
+  contact:
+    name: CardDemo Team
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required: [userId, password]
+      properties:
+        userId:
+          type: string
+          maxLength: 8
+          example: USER0001
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        userType:
+          type: string
+          enum: [A, U]
+        firstName:
+          type: string
+        lastName:
+          type: string
+        token:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Sign in (replaces CICS CC00 signon)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: List accounts (replaces CICS CACT)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Page of accounts
+
+  /accounts/{acctId}:
+    get:
+      tags: [Accounts]
+      summary: View account (replaces CICS CAVW)
+      parameters:
+        - name: acctId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Account details
+        '404':
+          description: Account not found
+    put:
+      tags: [Accounts]
+      summary: Update account (replaces CICS CAUP)
+      parameters:
+        - name: acctId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Updated account
+
+  /transactions:
+    post:
+      tags: [Transactions]
+      summary: Create transaction (replaces CICS CT02)
+      responses:
+        '200':
+          description: Created transaction
+
+  /transactions/{tranId}:
+    get:
+      tags: [Transactions]
+      summary: View transaction (replaces CICS CT01)
+      parameters:
+        - name: tranId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transaction details
+
+  /transactions/account/{acctId}:
+    get:
+      tags: [Transactions]
+      summary: List transactions by account (replaces CICS CT00)
+      parameters:
+        - name: acctId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Page of transactions
+
+  /cards/{cardNum}:
+    get:
+      tags: [Cards]
+      summary: View card (replaces CICS CCDL)
+      parameters:
+        - name: cardNum
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Card details
+    put:
+      tags: [Cards]
+      summary: Update card (replaces CICS CCUP)
+      parameters:
+        - name: cardNum
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated card
+
+  /admin/users:
+    get:
+      tags: [Administration]
+      summary: List users (replaces CICS CU00)
+      responses:
+        '200':
+          description: Page of users
+    post:
+      tags: [Administration]
+      summary: Create user (replaces CICS CU01)
+      responses:
+        '200':
+          description: Created user
+
+  /admin/users/{userId}:
+    get:
+      tags: [Administration]
+      summary: View user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: User details
+    put:
+      tags: [Administration]
+      summary: Update user (replaces CICS CU02)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated user
+    delete:
+      tags: [Administration]
+      summary: Delete user (replaces CICS CU03)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: User deleted
+
+  /reports/transactions/{acctId}:
+    get:
+      tags: [Reports]
+      summary: Transaction report (replaces CICS CR00)
+      parameters:
+        - name: acctId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: startDate
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: endDate
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Transaction report
