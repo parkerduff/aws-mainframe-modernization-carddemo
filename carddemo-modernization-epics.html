@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardDemo Batch Modernization &mdash; EPICs &amp; User Stories</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #1e293b;
+  background: #f8fafc;
+  padding: 0;
+}
+
+/* ===== Layout ===== */
+.container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+/* ===== Header ===== */
+header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  color: #f1f5f9;
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+}
+header h1 { font-size: 2rem; font-weight: 700; margin-bottom: .25rem; }
+header p.subtitle { font-size: 1.05rem; opacity: .85; }
+
+/* ===== Summary Stats ===== */
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1.5rem 0 2rem;
+}
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: .5rem;
+  padding: .85rem 1.5rem;
+  text-align: center;
+  min-width: 150px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.stat-card .num { font-size: 1.75rem; font-weight: 700; color: #0f172a; }
+.stat-card .label { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+
+/* ===== Table of Contents ===== */
+.toc {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: .5rem;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.toc h2 { font-size: 1.25rem; margin-bottom: .75rem; color: #0f172a; }
+.toc ol { padding-left: 1.25rem; }
+.toc li { margin-bottom: .35rem; }
+.toc a { color: #2563eb; text-decoration: none; font-weight: 500; }
+.toc a:hover { text-decoration: underline; }
+
+/* ===== EPIC Section ===== */
+.epic-section { margin-bottom: 2.5rem; }
+.epic-header {
+  border-radius: .5rem .5rem 0 0;
+  padding: 1rem 1.5rem;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.epic-desc {
+  background: #ffffff;
+  border-left: 4px solid #94a3b8;
+  padding: .75rem 1.25rem;
+  font-style: italic;
+  color: #475569;
+  margin-bottom: 0;
+}
+.epic-body {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 .5rem .5rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+/* ===== Color palette for EPICs ===== */
+.epic-color-1  { background: #1e40af; } /* blue-800 */
+.epic-color-2  { background: #7e22ce; } /* purple-700 */
+.epic-color-3  { background: #0e7490; } /* cyan-700 */
+.epic-color-4  { background: #b45309; } /* amber-700 */
+.epic-color-5  { background: #15803d; } /* green-700 */
+.epic-color-6  { background: #be123c; } /* rose-700 */
+.epic-color-7  { background: #4338ca; } /* indigo-700 */
+.epic-color-8  { background: #0f766e; } /* teal-700 */
+.epic-color-9  { background: #a16207; } /* yellow-700 */
+.epic-color-10 { background: #9333ea; } /* violet-600 */
+.epic-color-11 { background: #c2410c; } /* orange-700 */
+.epic-color-12 { background: #0369a1; } /* sky-700 */
+.epic-color-13 { background: #dc2626; } /* red-600 */
+
+/* ===== Story (details/summary) ===== */
+details.story {
+  border: 1px solid #e2e8f0;
+  border-radius: .375rem;
+  margin-bottom: .75rem;
+  background: #ffffff;
+}
+details.story:nth-child(odd) { background: #f8fafc; }
+details.story summary {
+  cursor: pointer;
+  padding: .65rem 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+details.story summary::before {
+  content: '\25B6';
+  font-size: .7rem;
+  transition: transform .2s;
+  display: inline-block;
+}
+details.story[open] summary::before {
+  transform: rotate(90deg);
+}
+details.story summary::-webkit-details-marker { display: none; }
+.story-body { padding: .75rem 1rem 1rem 1.75rem; }
+.story-body h4 { font-size: .9rem; margin-bottom: .5rem; color: #334155; }
+.story-body ul { padding-left: 1.25rem; margin-bottom: .75rem; }
+.story-body li { margin-bottom: .3rem; font-size: .92rem; }
+.story-body .ref {
+  font-size: .82rem;
+  color: #64748b;
+  background: #f1f5f9;
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: .25rem;
+  margin-top: .25rem;
+}
+
+/* ===== Footer ===== */
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+  font-size: .82rem;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 2rem;
+}
+
+/* ===== Print ===== */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  header { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .epic-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  details.story { break-inside: avoid; }
+  details.story[open] .story-body { break-inside: avoid; }
+  .toc { break-after: page; }
+  .stat-card { border: 1px solid #ccc; }
+  a { color: #1e40af !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CardDemo Batch Modernization</h1>
+  <p class="subtitle">EPICs &amp; User Stories &mdash; AWS Mainframe Modernization</p>
+</header>
+
+<div class="container">
+
+<!-- ========== Summary Statistics ========== -->
+<div class="stats-bar">
+  <div class="stat-card"><div class="num">13</div><div class="label">EPICs</div></div>
+  <div class="stat-card"><div class="num">34</div><div class="label">User Stories</div></div>
+  <div class="stat-card"><div class="num">6</div><div class="label">High Complexity</div></div>
+  <div class="stat-card"><div class="num">4</div><div class="label">Medium Complexity</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Low Complexity</div></div>
+</div>
+
+<!-- ========== Table of Contents ========== -->
+<nav class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#epic-1">EPIC 1: Database Schema &amp; Data Migration</a> (3 stories)</li>
+    <li><a href="#epic-2">EPIC 2: Transaction Posting Service (CBTRN02C)</a> (5 stories)</li>
+    <li><a href="#epic-3">EPIC 3: Interest Calculation Service (CBACT04C)</a> (4 stories)</li>
+    <li><a href="#epic-4">EPIC 4: Transaction Report Service (CBTRN03C)</a> (3 stories)</li>
+    <li><a href="#epic-5">EPIC 5: Data Export/Import Services (CBEXPORT/CBIMPORT)</a> (2 stories)</li>
+    <li><a href="#epic-6">EPIC 6: Transaction Type Maintenance Service (COBTUPDT)</a> (1 story)</li>
+    <li><a href="#epic-7">EPIC 7: Authorization Purge Service (CBPAUP0C)</a> (1 story)</li>
+    <li><a href="#epic-8">EPIC 8: Transaction Validation Service (CBTRN01C)</a> (1 story)</li>
+    <li><a href="#epic-9">EPIC 9: Account Data Processing Service (CBACT01C)</a> (1 story)</li>
+    <li><a href="#epic-10">EPIC 10: Orchestration &amp; Scheduling</a> (3 stories)</li>
+    <li><a href="#epic-11">EPIC 11: Statement Generation Service (CBSTM03A)</a> (1 story)</li>
+    <li><a href="#epic-12">EPIC 12: Utility Programs Replacement</a> (5 stories)</li>
+    <li><a href="#epic-13">EPIC 13: Testing &amp; Validation</a> (4 stories)</li>
+  </ol>
+</nav>
+
+<!-- ================================================================ -->
+<!-- EPIC 1 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-1">
+  <div class="epic-header epic-color-1">EPIC 1: Database Schema &amp; Data Migration</div>
+  <div class="epic-desc">Migrate VSAM KSDS files to Aurora PostgreSQL while preserving all record layouts, key structures, and data integrity.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-1.1: Create PostgreSQL schema for all VSAM datasets</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a migration engineer, I want to create a PostgreSQL schema that maps all VSAM KSDS file layouts to relational tables so that the modernized services have a reliable data store.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>All VSAM KSDS files (CUSTDATA, ACCTDATA, CARDDATA, CARDXREF, TRANSACT, TRANTYPE, TRANCATG, DISCGRP, TCATBALF, USRSEC) have corresponding PostgreSQL tables</li>
+          <li>Primary keys match original KSDS key structures</li>
+          <li>Alternate indexes are represented as secondary indexes or unique constraints</li>
+          <li>All copybook field layouts (PIC clauses) are mapped to appropriate PostgreSQL data types</li>
+          <li>Foreign key relationships between tables are defined where applicable</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-1.2: Seed database from ASCII data files</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a migration engineer, I want to load the existing ASCII data files into the new PostgreSQL schema so that the modernized application starts with production-equivalent data.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>All data from app/data/ files is loaded into corresponding PostgreSQL tables</li>
+          <li>Record counts match between source files and target tables</li>
+          <li>Data integrity constraints pass after loading</li>
+          <li>Character encoding is correctly handled (EBCDIC to UTF-8 where applicable)</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-1.3: Create S3 bucket structure for file-based I/O</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a migration engineer, I want to create an S3 bucket structure that replaces sequential file I/O so that batch services can read/write data files in the cloud.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>S3 bucket <code>carddemo-data</code> is created with appropriate prefixes for each file type</li>
+          <li>Daily transaction input files can be placed in <code>s3://carddemo-data/daily-transactions/</code></li>
+          <li>Reject files are written to <code>s3://carddemo-data/rejects/{date}/</code></li>
+          <li>Statement output files are written to <code>s3://carddemo-data/statements/</code></li>
+          <li>IAM policies restrict access to authorized services only</li>
+        </ul>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 2 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-2">
+  <div class="epic-header epic-color-2">EPIC 2: Transaction Posting Service (CBTRN02C)</div>
+  <div class="epic-desc">Rewrite the daily transaction posting program preserving all validation rules, reject handling, category balance upsert, and account balance update logic.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-2.1: Implement card cross-reference validation</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to validate each daily transaction's card number against the card cross-reference table so that transactions with invalid card numbers are rejected.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Look up <code>card_xref</code> by <code>dalytran_card_num</code></li>
+          <li>If not found: <code>validation_fail_reason = 100</code>, desc = <code>'INVALID CARD NUMBER FOUND'</code></li>
+          <li>If found: retrieve <code>xref_acct_id</code> for subsequent account lookup</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN02C.cbl lines 380-392</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-2.2: Implement account validation with credit limit and expiry checks</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to validate each transaction against account records so that overlimit and expired account transactions are rejected.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Look up <code>accounts</code> by <code>xref_acct_id</code></li>
+          <li>If not found: <code>validation_fail_reason = 101</code>, desc = <code>'ACCOUNT RECORD NOT FOUND'</code></li>
+          <li>Compute <code>temp_bal = acct_curr_cyc_credit - acct_curr_cyc_debit + dalytran_amt</code></li>
+          <li>If <code>acct_credit_limit &lt; temp_bal</code>: <code>validation_fail_reason = 102</code>, desc = <code>'OVERLIMIT TRANSACTION'</code></li>
+          <li>If <code>acct_expiration_date &lt; dalytran_orig_ts[1:10]</code>: <code>validation_fail_reason = 103</code>, desc = <code>'TRANSACTION RECEIVED AFTER ACCT EXPIRATION'</code></li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN02C.cbl lines 393-422</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-2.3: Implement transaction posting with category balance upsert</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to post validated transactions and update category balances and account balances so that the financial records remain accurate.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Map all daily transaction fields to transaction record</li>
+          <li><code>proc_ts</code> generated as DB2-format timestamp</li>
+          <li>Category balance upsert: look up <code>tran_cat_balances</code> by (<code>xref_acct_id</code>, <code>dalytran_type_cd</code>, <code>dalytran_cat_cd</code>); INSERT if not found, UPDATE (<code>tran_cat_bal += dalytran_amt</code>) if found</li>
+          <li>Account balance update: <code>acct_curr_bal += dalytran_amt</code>; if amt &gt;= 0: <code>acct_curr_cyc_credit += amt</code>; else: <code>acct_curr_cyc_debit += amt</code></li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN02C.cbl lines 424-559</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-2.4: Implement reject record writing</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to write rejected transactions to a reject file so that they can be reviewed and reprocessed.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Reject record = original daily transaction data + validation trailer (reason code + reason description)</li>
+          <li>Write to <code>s3://carddemo-data/rejects/{date}/</code></li>
+          <li>If <code>reject_count &gt; 0</code>, service exits with non-zero status (equivalent to <code>RETURN-CODE = 4</code>)</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN02C.cbl lines 446-465</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-2.5: Implement sequential processing order preservation</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want transactions to be processed in the exact order they appear in the input file so that cumulative balance calculations are deterministic.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Input file read sequentially from S3</li>
+          <li>Transactions processed one-at-a-time in file order</li>
+          <li>Account balance updates are cumulative within the batch run</li>
+        </ul>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 3 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-3">
+  <div class="epic-header epic-color-3">EPIC 3: Interest Calculation Service (CBACT04C)</div>
+  <div class="epic-desc">Rewrite the monthly interest calculation program preserving control-break logic, disclosure group rate lookups with default fallback, interest formula, and account update logic.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-3.1: Implement control-break processing by account</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to process category balances with control-break logic by account so that interest is calculated and applied per account.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Read <code>tran_cat_balances</code> ordered by <code>trancat_acct_id</code></li>
+          <li>On account break: update previous account (<code>acct_curr_bal += total_interest</code>, reset <code>cyc_credit=0</code>, <code>cyc_debit=0</code>)</li>
+          <li>Skip update on first record (WS-FIRST-TIME logic)</li>
+          <li>Perform final account update on end of data</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBACT04C.cbl lines 188-213, 350-370</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-3.2: Implement disclosure group rate lookup with default fallback</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to look up interest rates from the disclosure group table with a default fallback so that every category balance has a rate applied.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Look up <code>disclosure_groups</code> by (<code>acct_group_id</code>, <code>trancat_cd</code>, <code>trancat_type_cd</code>)</li>
+          <li>If not found: retry with <code>acct_group_id = 'DEFAULT'</code></li>
+          <li>If default also not found: ABEND</li>
+          <li>If <code>dis_int_rate = 0</code>: skip interest and fee computation</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBACT04C.cbl lines 415-460</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-3.3: Implement interest computation and transaction generation</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to compute monthly interest and generate interest transactions so that interest charges are recorded in the transaction history.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Formula: <code>monthly_interest = (tran_cat_bal * dis_int_rate) / 1200</code> using exact decimal arithmetic</li>
+          <li>Generate interest transaction record with <code>tran_type_cd='01'</code>, <code>tran_cat_cd='05'</code>, <code>tran_source='System'</code>, <code>tran_desc='Int. for a/c ' + acct_id</code></li>
+          <li>Accept date parameter (equivalent to JCL <code>PARM='2022071800'</code>)</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBACT04C.cbl lines 462-515</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-3.4: Implement fee computation placeholder</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to preserve the fee computation interface so that fees can be added in the future without structural changes.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Preserve empty method/interface called after interest computation (1400-COMPUTE-FEES is currently a stub)</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBACT04C.cbl lines 518-520</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 4 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-4">
+  <div class="epic-header epic-color-4">EPIC 4: Transaction Report Service (CBTRN03C)</div>
+  <div class="epic-desc">Rewrite the transaction report program preserving date-range filtering, reference lookups, and multi-level totaling.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-4.1: Implement date-range filtering from parameter input</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a reporting engineer, I want to filter transactions by a date range so that reports cover only the specified period.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Read start date and end date from parameter source</li>
+          <li>Filter: include only if <code>tran_proc_ts[1:10] &gt;= start_date</code> AND <code>&lt;= end_date</code></li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN03C.cbl lines 170-178, 220-243</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-4.2: Implement reference data lookups for report enrichment</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a reporting engineer, I want to enrich transaction data with reference lookups so that reports display human-readable descriptions.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>On card number change: look up <code>card_xref</code></li>
+          <li>Look up <code>transaction_types</code> by <code>tran_type_cd</code></li>
+          <li>Look up <code>transaction_categories</code> by (<code>tran_type_cd</code>, <code>tran_cat_cd</code>)</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN03C.cbl lines 484-512</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-4.3: Implement multi-level report totaling</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a reporting engineer, I want multi-level totals in the report so that users can see page-level, account-level, and grand totals.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Page totals: accumulate <code>tran_amt</code> per page, write page total line</li>
+          <li>Account totals: accumulate per account (card number), write on card number change</li>
+          <li>Grand totals: accumulate from page totals, write at end</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN03C.cbl lines 274-374</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 5 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-5">
+  <div class="epic-header epic-color-5">EPIC 5: Data Export/Import Services (CBEXPORT/CBIMPORT)</div>
+  <div class="epic-desc">Rewrite the branch data export and import programs preserving the multi-record-type format, field mappings, and error handling.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-5.1: Implement data export service</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a data migration engineer, I want to export all entity data into a single multi-record-type file so that branch data can be transferred between systems.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Export record format: record type (C/A/X/T/D) + 26-char timestamp + sequence number + branch ID ('0001') + region code ('NORTH') + record data</li>
+          <li>Export order: customers, accounts, xrefs, transactions, cards</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBEXPORT.cbl lines 146-158, 269-373</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-5.2: Implement data import service</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a data migration engineer, I want to import multi-record-type files and dispatch records to the correct tables so that branch data is correctly ingested.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Dispatch by record type: C&rarr;customer, A&rarr;account, X&rarr;xref, T&rarr;transaction, D&rarr;card, OTHER&rarr;error</li>
+          <li>Unknown record types: write error record</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBIMPORT.cbl lines 270-285, 424-478</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 6 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-6">
+  <div class="epic-header epic-color-6">EPIC 6: Transaction Type Maintenance Service (COBTUPDT)</div>
+  <div class="epic-desc">Rewrite the DB2 transaction type CRUD program.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-6.1: Implement transaction type CRUD operations</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a maintenance engineer, I want to perform CRUD operations on transaction types so that reference data can be managed programmatically.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li><code>rec_type='A'</code>: INSERT; <code>'U'</code>: UPDATE; <code>'D'</code>: DELETE; <code>'*'</code>: skip; OTHER: ABEND</li>
+          <li>On SQL error or no rows found: ABEND with return code 4</li>
+        </ul>
+        <span class="ref">Reference: app/app-transaction-type-db2/cbl/COBTUPDT.cbl lines 109-237</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 7 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-7">
+  <div class="epic-header epic-color-7">EPIC 7: Authorization Purge Service (CBPAUP0C)</div>
+  <div class="epic-desc">Rewrite the IMS-based expired authorization purge program.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-7.1: Implement expired authorization purge with checkpoint logic</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a maintenance engineer, I want to purge expired authorization records with checkpointing so that the authorization database does not grow unbounded.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Expiry check: <code>auth_date = 99999 - auth_date_9c</code>; <code>day_diff = current_yyddd - auth_date</code>; if <code>day_diff &gt;= expiry_days</code> &rarr; delete</li>
+          <li>On delete approved: decrement <code>approved_auth_cnt</code>, subtract <code>approved_amt</code></li>
+          <li>On delete declined: decrement <code>declined_auth_cnt</code>, subtract <code>transaction_amt</code></li>
+          <li>If both counts &lt;= 0: delete summary record</li>
+          <li>Checkpoint every <code>chkp_freq</code> summaries</li>
+          <li>Default <code>expiry_days=5</code>, <code>chkp_freq=5</code></li>
+        </ul>
+        <span class="ref">Reference: app/app-authorization-ims-db2-mq/cbl/CBPAUP0C.cbl lines 132-386</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 8 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-8">
+  <div class="epic-header epic-color-8">EPIC 8: Transaction Validation Service (CBTRN01C)</div>
+  <div class="epic-desc">Rewrite the daily transaction validation/display program.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-8.1: Implement transaction validation with xref and account lookup</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to validate transactions by looking up card cross-references and accounts so that invalid data is logged for investigation.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Look up <code>card_xref</code>; if not found log <code>'CARD NUMBER {num} COULD NOT BE VERIFIED'</code></li>
+          <li>If found: look up <code>accounts</code>; if not found log <code>'ACCOUNT {id} NOT FOUND'</code></li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBTRN01C.cbl lines 154-250</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 9 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-9">
+  <div class="epic-header epic-color-9">EPIC 9: Account Data Processing Service (CBACT01C)</div>
+  <div class="epic-desc">Rewrite the account read/write program preserving multi-format output.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-9.1: Implement account data processing with multiple output formats</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to process account data and produce multiple output formats so that downstream systems receive data in their expected layouts.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Fixed-length output with date formatting (replaces <code>CALL 'COBDATFT'</code>)</li>
+          <li>If <code>acct_curr_cyc_debit = 0</code>, substitute <code>2525.00</code></li>
+          <li>Array-format record: 3 occurrences with hardcoded test values for indices 2,3</li>
+          <li>Two variable-length records: VB1 (12 bytes) and VB2 (39 bytes)</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBACT01C.cbl lines 165-315</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 10 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-10">
+  <div class="epic-header epic-color-10">EPIC 10: Orchestration &amp; Scheduling</div>
+  <div class="epic-desc">Replace JCL job chains and CA7/Control-M scheduling with AWS Step Functions and EventBridge.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-10.1: Implement Daily batch Step Function</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a platform engineer, I want a daily Step Function that orchestrates transaction processing so that nightly batch runs are automated in AWS.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Chain: Backup Transactions &rarr; Post Transactions &rarr; Check Rejects</li>
+          <li>If rejects &gt; 0: send SNS alert</li>
+          <li>Triggered daily via EventBridge</li>
+          <li>CLOSEFIL/OPENFIL eliminated; WAITSTEP replaced by native Wait state</li>
+        </ul>
+        <span class="ref">Reference: app/scheduler/CardDemo.controlm lines 1-25</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-10.2: Implement Monthly batch Step Function</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a platform engineer, I want a monthly Step Function for interest processing and statement generation so that month-end batch runs are automated.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Chain: Interest Calculation &rarr; Combine Transactions (SQL) &rarr; Statement Generation</li>
+          <li>COMBTRAN SORT replaced by SQL <code>INSERT...SELECT...UNION ALL...ORDER BY</code></li>
+          <li>Triggered monthly via EventBridge</li>
+        </ul>
+        <span class="ref">Reference: app/scheduler/CardDemo.controlm lines 64-65</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-10.3: Implement Weekly batch Step Function</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a platform engineer, I want a weekly Step Function for reference data maintenance so that transaction types and disclosure groups are refreshed on schedule.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Chain: Transaction Type Maintenance &rarr; Disclosure Group Refresh</li>
+          <li>Triggered weekly (Saturday) via EventBridge</li>
+        </ul>
+        <span class="ref">Reference: app/scheduler/CardDemo.controlm lines 26-63</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 11 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-11">
+  <div class="epic-header epic-color-11">EPIC 11: Statement Generation Service (CBSTM03A)</div>
+  <div class="epic-desc">Rewrite the statement generation program.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-11.1: Implement per-card statement generation</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a batch processing engineer, I want to generate per-card statements in both text and HTML format so that customers receive readable billing statements.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Read transactions, xref, accounts, customers</li>
+          <li>Generate text statement and HTML statement</li>
+          <li>Output to S3 (replaces STATEMNT.PS and STATEMNT.HTML)</li>
+        </ul>
+        <span class="ref">Reference: app/jcl/CREASTMT.JCL lines 79-96, app/cbl/CBSTM03A.cbl</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 12 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-12">
+  <div class="epic-header epic-color-12">EPIC 12: Utility Programs Replacement</div>
+  <div class="epic-desc">Replace simple utility programs with native AWS services.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-12.1: Replace CBACT02C/CBACT03C/CBCUS01C with SQL queries</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a modernization engineer, I want to replace read-and-display utility programs with parameterized SQL queries so that utility functionality is provided natively.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>These are read-and-display programs; replace with parameterized SQL queries or Athena views</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/CBACT02C.cbl, app/cbl/CBACT03C.cbl, app/cbl/CBCUS01C.cbl</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-12.2: Replace COBSWAIT with Step Functions Wait state</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a modernization engineer, I want to replace the COBOL wait utility with a native Step Functions Wait state so that job synchronization uses managed services.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>COBSWAIT functionality replaced by native AWS Step Functions Wait state</li>
+        </ul>
+        <span class="ref">Reference: app/cbl/COBSWAIT.cbl lines 34-40</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-12.3: Eliminate CLOSEFIL/OPENFIL jobs</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a modernization engineer, I want to eliminate the file locking jobs so that unnecessary mainframe-specific operations are removed.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>No VSAM file locking needed with database; these become no-ops</li>
+        </ul>
+        <span class="ref">Reference: app/jcl/CLOSEFIL.jcl</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-12.4: Replace TRANBKP with RDS automated snapshots</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a modernization engineer, I want to replace the transaction backup job with RDS automated snapshots so that backups are managed by AWS.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>TRANBKP job functionality replaced by RDS automated snapshots</li>
+        </ul>
+        <span class="ref">Reference: app/jcl/TRANBKP.jcl</span>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-12.5: Replace COMBTRAN SORT with SQL merge</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a modernization engineer, I want to replace the SORT-based transaction merge with a SQL query so that data combination uses the database engine.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Single SQL: <code>INSERT INTO transactions SELECT ... FROM system_transactions UNION ALL SELECT ... FROM backup_transactions ORDER BY tran_id</code></li>
+        </ul>
+        <span class="ref">Reference: app/jcl/COMBTRAN.jcl lines 22-48</span>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- EPIC 13 -->
+<!-- ================================================================ -->
+<section class="epic-section" id="epic-13">
+  <div class="epic-header epic-color-13">EPIC 13: Testing &amp; Validation</div>
+  <div class="epic-desc">Ensure zero business logic deprecation through comprehensive testing.</div>
+  <div class="epic-body">
+
+    <details class="story">
+      <summary>US-13.1: Create parallel-run test harness</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a QA engineer, I want a parallel-run test harness so that I can verify the modernized services produce identical results to the original COBOL programs.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Run both COBOL and modernized services with identical input data</li>
+          <li>Compare outputs byte-for-byte (or field-for-field after format normalization)</li>
+          <li>Cover: CBTRN02C (transaction posting), CBACT04C (interest calc), CBTRN03C (report)</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-13.2: Create decimal precision validation tests</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a QA engineer, I want decimal precision validation tests so that I can verify financial calculations match COBOL precision exactly.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Verify that all NUMERIC(12,2) / BigDecimal calculations match COBOL COMP-3 / PIC S9(10)V99 results</li>
+          <li>Test interest formula: <code>(balance * rate) / 1200</code> with edge cases (zero balance, zero rate, max balance, negative balance)</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-13.3: Create reject scenario test suite</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a QA engineer, I want a reject scenario test suite so that all rejection paths are verified against the original COBOL behavior.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Test all 4 reject reasons: 100 (invalid card), 101 (account not found), 102 (overlimit), 103 (expired account)</li>
+          <li>Verify reject file format matches original</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>US-13.4: Create sequential processing order tests</summary>
+      <div class="story-body">
+        <h4>Description</h4>
+        <p>As a QA engineer, I want sequential processing order tests so that I can confirm processing order affects cumulative balances correctly.</p>
+        <h4>Acceptance Criteria</h4>
+        <ul>
+          <li>Verify that processing transactions in file order produces identical cumulative balance results</li>
+          <li>Test with transactions that would produce different reject outcomes if processed out of order</li>
+        </ul>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+</div><!-- /.container -->
+
+<footer>
+  Generated on <span id="gen-date"></span> &mdash; CardDemo Batch Modernization &mdash; AWS Mainframe Modernization
+  <script>document.getElementById('gen-date').textContent=new Date().toISOString().slice(0,10);</script>
+</footer>
+
+</body>
+</html>
