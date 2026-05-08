@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  CardDemo modernised stack - IAM role assumed by the GitHub Actions
+  CI/CD pipeline.  Configure the GitHub OIDC trust relationship via
+  the GhRepoFullName parameter; the role grants only the permissions
+  required to deploy the stack and trigger the AWS Mainframe
+  Modernization application.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+  GhRepoFullName:
+    Type: String
+    Description: GitHub repository in <org>/<repo> form authorised to assume this role
+  GhActionsOidcProviderArn:
+    Type: String
+    Description: ARN of the existing GitHub OIDC provider in this account
+
+Resources:
+  CiCdDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub carddemo-${EnvironmentName}-cicd-deploy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GhActionsOidcProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  !Sub repo:${GhRepoFullName}:*
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+      Policies:
+        - PolicyName: deploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:GetTemplateSummary
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - rds:Describe*
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                  - secretsmanager:GetSecretValue
+                  - m2:GetApplication
+                  - m2:StartApplication
+                  - m2:StopApplication
+                  - m2:UpdateApplication
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - !GetAtt CiCdDeployRole.Arn
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRole
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/carddemo-*
+
+Outputs:
+  CiCdDeployRoleArn:
+    Value: !GetAtt CiCdDeployRole.Arn
+    Export:
+      Name: !Sub carddemo-${EnvironmentName}-cicd-role

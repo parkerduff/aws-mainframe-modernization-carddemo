@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  CardDemo modernised stack - relational database.  Provisions a
+  PostgreSQL RDS instance and a DB subnet group.  The database password
+  is sourced from AWS Secrets Manager so plaintext credentials never
+  appear in CloudFormation parameters or stack outputs.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+  DBInstanceClass:
+    Type: String
+    Default: db.t4g.medium
+  DBAllocatedStorage:
+    Type: Number
+    Default: 50
+  DBEngineVersion:
+    Type: String
+    Default: "15.5"
+  DBName:
+    Type: String
+    Default: carddemo
+  DBMasterUsername:
+    Type: String
+    Default: carddemo
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub carddemo-${EnvironmentName} db subnets
+      SubnetIds: !Split
+        - ","
+        - !ImportValue
+          Fn::Sub: carddemo-${EnvironmentName}-private-subnets
+
+  DBPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub /carddemo/${EnvironmentName}/db/password
+      Description: Master password for the CardDemo modernised database
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${DBMasterUsername}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub carddemo-${EnvironmentName}-db
+      Engine: postgres
+      EngineVersion: !Ref DBEngineVersion
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${DBPasswordSecret}:SecretString:password}}"
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !ImportValue
+          Fn::Sub: carddemo-${EnvironmentName}-db-sg
+      PubliclyAccessible: false
+      StorageEncrypted: true
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+
+Outputs:
+  DBEndpoint:
+    Value: !GetAtt DBInstance.Endpoint.Address
+    Export:
+      Name: !Sub carddemo-${EnvironmentName}-db-endpoint
+  DBPasswordSecretArn:
+    Value: !Ref DBPasswordSecret
+    Export:
+      Name: !Sub carddemo-${EnvironmentName}-db-password-arn
