@@ -44,6 +44,7 @@
          05 WS-REAS-CD                 PIC S9(09) COMP VALUE ZEROS.
          05 WS-USER-ID                 PIC X(08).
          05 WS-USER-PWD                PIC X(08).
+         05 WS-COMPUTED-HASH           PIC X(64) VALUE SPACES.
 
        COPY COCOM01Y.
 
@@ -53,6 +54,7 @@
        COPY CSDAT01Y.
        COPY CSMSG01Y.
        COPY CSUSR01Y.
+       COPY CHASHPWY.
 
        COPY DFHAID.
        COPY DFHBMSCA.
@@ -220,7 +222,8 @@
 
            EVALUATE WS-RESP-CD
                WHEN 0
-                   IF SEC-USR-PWD = WS-USER-PWD
+                   PERFORM VERIFY-PASSWORD-HASH
+                   IF WS-COMPUTED-HASH = SEC-USR-PWD-HASH
                        MOVE WS-TRANID    TO CDEMO-FROM-TRANID
                        MOVE WS-PGMNAME   TO CDEMO-FROM-PROGRAM
                        MOVE WS-USER-ID   TO CDEMO-USER-ID
@@ -255,6 +258,42 @@
                    MOVE -1       TO USERIDL OF COSGN0AI
                    PERFORM SEND-SIGNON-SCREEN
            END-EVALUATE.
+
+      *----------------------------------------------------------------*
+      *                      VERIFY-PASSWORD-HASH
+      *
+      * Compute SHA-256(supplied-password || stored-salt) by calling the
+      * CHASHPW subprogram and place the lowercase hex digest into
+      * WS-COMPUTED-HASH for constant-time comparison against the
+      * stored hash SEC-USR-PWD-HASH.  Plaintext passwords are NEVER
+      * compared directly; legacy SEC-USR-PWD is preserved on the file
+      * for binary compatibility but is not consulted here.
+      *----------------------------------------------------------------*
+       VERIFY-PASSWORD-HASH.
+
+           MOVE SPACES         TO CHASHPW-PASSWORD
+                                  CHASHPW-SALT
+                                  CHASHPW-HASH-OUT
+                                  WS-COMPUTED-HASH
+           MOVE 0              TO CHASHPW-RETURN-CODE
+           MOVE WS-USER-PWD    TO CHASHPW-PASSWORD
+           MOVE 8              TO CHASHPW-PASSWORD-LEN
+           MOVE SEC-USR-PWD-SALT
+                               TO CHASHPW-SALT
+           MOVE 16             TO CHASHPW-SALT-LEN
+
+           CALL 'CHASHPW' USING CHASHPW-PARMS
+
+           IF CHASHPW-RETURN-CODE NOT = 0
+               MOVE 'Y'        TO WS-ERR-FLG
+               MOVE 'Authentication service unavailable. Retry.'
+                                       TO WS-MESSAGE
+               MOVE -1         TO USERIDL OF COSGN0AI
+               PERFORM SEND-SIGNON-SCREEN
+           ELSE
+               MOVE CHASHPW-HASH-OUT TO WS-COMPUTED-HASH
+           END-IF.
+
       *
       * Ver: CardDemo_v1.0-15-g27d6c6f-68 Date: 2022-07-19 23:12:33 CDT
       *

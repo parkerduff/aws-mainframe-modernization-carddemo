@@ -20,19 +20,36 @@
 //******************************************************************
 //*********************************************************************
 //* FTP JOB TO RECEIVE A FILE
-//* MY.FTP.SERVER.COM IS THE FTP SERVER NAME(SUBJECT TO CHANGE FOR SITE)
-//* USER ID - EITHER SCHEDULER ID OR TSO USER ID
-//* PASSWORD OF THE USER
-//* FOLDER TO FTP THE MAINFRAME FILE
-//* PUT COMMAND FOR SENDING MAINFRAME FILE TO TXT
-//* CHANGE THE PUT COMMAND TO GET TO RECEIVE FILE INTO MAINFRAME
+//*
+//* SECURITY NOTE:
+//*   FTP credentials must NEVER be stored in plaintext inside source-
+//*   controlled JCL.  Connection details are sourced from the symbolic
+//*   parameters &FTPHOST, &FTPUSER and &FTPPASS which are populated by
+//*   the scheduler / job submission tooling from a secure credential
+//*   store (AWS Secrets Manager / SSM Parameter Store, HashiCorp Vault,
+//*   IBM RACF or your enterprise PAM solution).
+//*
+//*   See config/secrets-config.md for details on how the symbolic
+//*   parameters are resolved at submission time.
+//*
+//*   Symbolic parameters (override on JOB card or via job library):
+//*     FTPHOST  - target FTP server hostname or IP
+//*     FTPUSER  - service account user id
+//*     FTPPASS  - reference to a secret value, NOT the value itself
 //*********************************************************************
-//STEP1 EXEC PGM=FTP,REGION=2048K
-//*          PARM='10.81.148.4 (EXIT TIMEOUT 20'
+//STEP1 EXEC PGM=FTP,REGION=2048K,
+//             PARM='(EXIT TIMEOUT 20'
+//*
+//* The credential lines below are intentionally placeholders.  At
+//* submission time the scheduler must materialise them from the secure
+//* credential store before the job is enqueued.  See:
+//*     config/secrets-config.md
+//*     infrastructure/cloudformation/secrets.yaml
+//*
 //SYSIN DD *
- 172.31.21.124
- carddemousr
- ftpdemo1
+ &FTPHOST
+ &FTPUSER
+ &FTPPASS
  ASCII
  pwd
  dir

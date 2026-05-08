@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  CardDemo modernised stack - AWS Mainframe Modernization environment
+  plus the supporting S3 staging buckets used for batch file ingestion
+  and report distribution.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+  M2EngineType:
+    Type: String
+    AllowedValues:
+      - bluage
+      - microfocus
+    Default: microfocus
+  M2EngineVersion:
+    Type: String
+    Default: "9.0.6"
+  M2InstanceType:
+    Type: String
+    Default: M2.m5.large
+
+Resources:
+  BatchInputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub carddemo-${EnvironmentName}-batch-input-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  BatchOutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub carddemo-${EnvironmentName}-batch-output-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  M2Environment:
+    Type: AWS::M2::Environment
+    Properties:
+      Name: !Sub carddemo-${EnvironmentName}
+      EngineType: !Ref M2EngineType
+      EngineVersion: !Ref M2EngineVersion
+      InstanceType: !Ref M2InstanceType
+      SubnetIds: !Split
+        - ","
+        - !ImportValue
+          Fn::Sub: carddemo-${EnvironmentName}-private-subnets
+      SecurityGroupIds:
+        - !ImportValue
+          Fn::Sub: carddemo-${EnvironmentName}-m2-sg
+      PubliclyAccessible: false
+      Description: !Sub CardDemo ${EnvironmentName} Mainframe Modernization environment
+
+Outputs:
+  M2EnvironmentId:
+    Value: !Ref M2Environment
+    Export:
+      Name: !Sub carddemo-${EnvironmentName}-m2-environment
+  BatchInputBucketName:
+    Value: !Ref BatchInputBucket
+    Export:
+      Name: !Sub carddemo-${EnvironmentName}-batch-input
+  BatchOutputBucketName:
+    Value: !Ref BatchOutputBucket
+    Export:
+      Name: !Sub carddemo-${EnvironmentName}-batch-output

@@ -57,3 +57,77 @@ If you discover a potential security issue in this project we ask that you notif
 ## Licensing
 
 See the [LICENSE](LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
+
+
+## Coding standards
+
+These standards govern the modernised code base.  They apply to every
+new program, copybook and JCL member added under this repository.
+
+### COBOL
+
+* **Free-form, columns 1-72.**  All new programs must compile with both
+  the IBM Enterprise COBOL and the AWS Mainframe Modernization Micro
+  Focus runtime, so avoid features that are unique to a single dialect.
+* **Naming.**
+  * Programs: 8 characters, all uppercase, prefix with the subsystem
+    (`CO` for online, `CB` for batch, `DB` for data-access).
+  * Paragraphs: numeric prefix that increases monotonically through
+    the program.  Use `0000-MAIN-DRIVER`, `1000-...`, `2000-...` for
+    the major phases and `9999-ABEND-PROGRAM` for the abend handler.
+    Do **not** mix `9999-ABEND-PROGRAM` and `Z-ABEND-PROGRAM` in the
+    same program.
+  * Working storage: dash-separated, prefix indicates scope - `WS-` for
+    working storage, `LK-` for linkage, `LS-` for local storage,
+    `DAL-` for the data-access-layer copybook.
+  * Copybooks: 8 characters, all uppercase, suffix `Y` (e.g.
+    `DBACCESY`).  The `Y` differentiates copybook members from
+    programs in scheduler / control libraries.
+* **Headers.**  Every program must start with the standard 7-line
+  banner shown in the existing `CO*.cbl` programs (program id,
+  application, type, function, last change date, author, copyright).
+* **Error handling.**
+  * Always check `EIBRESP` (online) or the SQLCA (batch) after every
+    EXEC CICS / EXEC SQL block.
+  * Centralise the abend logic in `9999-ABEND-PROGRAM` and call it via
+    `PERFORM` rather than inline `EXEC CICS ABEND`.
+  * Never silently swallow `NOTFND` - either set an error message and
+    return to the caller, or `PERFORM 9999-ABEND-PROGRAM`.
+* **Data access.**  New code must call the shared data-access layer
+  (`app/cbl/DBACCESS.cbl`) instead of issuing `EXEC CICS READ FILE` or
+  raw `EXEC SQL` statements.  This keeps the strangler-fig migration
+  reversible.
+
+### JCL
+
+* JOB cards must use symbolic parameters or `JCLLIB ORDER` for any
+  environment-specific value.  Do **not** embed hostnames, IP
+  addresses or credentials in the source-controlled JCL.
+* All members must end with a newline and stay within 80 columns.
+* Comments use the `//*` form and document the purpose, expected
+  inputs/outputs and any operational dependencies.
+
+### SQL
+
+* DDL lives in `db/schema.sql`; do not scatter `CREATE TABLE`
+  statements across migration scripts.
+* Column names mirror the COBOL field names from the source copybook
+  (lower-cased, dash to underscore).  This is what makes
+  `app/cbl/DBACCESS.cbl` regression-testable.
+* Every table has a primary key.  Foreign keys are defined in the same
+  file as the child table.
+
+### Python (migration & test tooling)
+
+* Targets Python 3.11+.  Run `pytest tests/unit` before pushing.
+* Type hints required on all public functions.
+* Logging via the stdlib `logging` module, not `print()`, except in
+  the `__main__` driver scripts.
+
+### Secrets
+
+* No plaintext secrets in any committed file.  See
+  `config/secrets-config.md` for the supported secret stores.
+* Adding a literal that even *looks* like a credential will trip the
+  `tests/lint/scan_secrets.py` linter; either remove it or add a
+  scoped allow-list entry.

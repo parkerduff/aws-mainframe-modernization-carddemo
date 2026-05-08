@@ -1,0 +1,171 @@
+name: CardDemo CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-and-validate:
+    name: Lint / Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: Install GnuCOBOL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnucobol
+
+      - name: Validate COBOL syntax (GnuCOBOL -fsyntax-only)
+        run: |
+          set -e
+          status=0
+          while IFS= read -r src; do
+            echo "Checking $src"
+            if ! cobc -fsyntax-only -free -I app/cpy "$src" 2> "$src.cobc.log"; then
+              echo "::warning file=$src::GnuCOBOL syntax check produced warnings (mainframe-only constructs are expected to fail on Linux)"
+              cat "$src.cobc.log"
+            fi
+          done < <(find app/cbl -type f -name '*.cbl')
+          # We do not fail the build on cobc errors because many
+          # programs use CICS / DB2 / VSAM constructs that GnuCOBOL
+          # cannot evaluate on Linux.  The job acts as a smoke check.
+
+      - name: Validate JCL syntax
+        run: python tests/lint/lint_jcl.py app/jcl
+
+      - name: Validate SQL schema
+        run: python tests/lint/lint_sql.py db/schema.sql
+
+      - name: Confirm no plaintext secrets
+        run: python tests/lint/scan_secrets.py
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    needs: lint-and-validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/unit -v
+
+  integration-tests:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: carddemo
+          POSTGRES_PASSWORD: carddemo
+          POSTGRES_DB: carddemo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_DSN: postgresql://carddemo:carddemo@localhost:5432/carddemo
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: Initialise schema
+        run: psql "$DB_DSN" -f db/schema.sql
+
+      - name: Run integration tests
+        run: pytest tests/integration -v
+
+  package-artifacts:
+    name: Package artefacts
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build artefact bundle
+        run: |
+          mkdir -p artifacts
+          tar --exclude='./.git' --exclude='./artifacts' \
+              -czf artifacts/carddemo-${{ github.sha }}.tar.gz .
+
+      - name: Upload artefact bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: carddemo-${{ github.sha }}
+          path: artifacts/carddemo-${{ github.sha }}.tar.gz
+          retention-days: 14
+
+  deploy:
+    name: Deploy (AWS Mainframe Modernization)
+    runs-on: ubuntu-latest
+    needs: package-artifacts
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy infrastructure
+        run: |
+          aws cloudformation deploy \
+            --stack-name carddemo-network \
+            --template-file infrastructure/cloudformation/networking.yaml \
+            --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy \
+            --stack-name carddemo-database \
+            --template-file infrastructure/cloudformation/database.yaml \
+            --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy \
+            --stack-name carddemo-secrets \
+            --template-file infrastructure/cloudformation/secrets.yaml \
+            --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy \
+            --stack-name carddemo-m2 \
+            --template-file infrastructure/cloudformation/m2-environment.yaml \
+            --capabilities CAPABILITY_NAMED_IAM
+
+      - name: Trigger Mainframe Modernization application deployment
+        run: |
+          aws m2 start-application \
+            --application-id ${{ secrets.M2_APPLICATION_ID }}

@@ -6,3 +6,55 @@ batch-app/markers/*
 /.idea/
 .DS_Store
 **/.DS_Store
+
+# Local development environment
+.env
+.env.*
+!.env.example
+
+# Credentials and secrets - must NEVER be committed
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.yml
+secrets*.yaml
+*.password
+*_credentials*
+
+# AWS / cloud tooling
+.aws/
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Compiled COBOL artefacts
+*.o
+*.so
+*.dylib
+*.exe
+*.dll
+*.obj
+*.gch
+*.lst
+*.pdb
+*.idy
+
+# Python tooling for migration scripts and tests
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Node tooling for the mock data generator
+node_modules/
+npm-debug.log*
+
+# CI/CD scratch data
+tests/_tmp/
+artifacts/
