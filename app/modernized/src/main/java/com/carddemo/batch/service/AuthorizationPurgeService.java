@@ -18,7 +18,9 @@ import java.util.Objects;
  * authorization date is at least {@code expiryDays} old, adjusts the parent
  * summary's approved/declined counters accordingly, and finally deletes the
  * summary itself once it has no remaining approved or declined auths. A
- * checkpoint is taken after every {@code checkpointFrequency} summaries.
+ * checkpoint is taken once more than {@code checkpointFrequency} summaries have
+ * been processed since the last checkpoint (the COBOL strictly-greater-than
+ * comparison on line 160).
  *
  * <p>Key modernizations:
  * <ul>
@@ -112,9 +114,10 @@ public class AuthorizationPurgeService {
      *
      * <p>Reproduces {@code MAIN-PARA} (lines 136-180): for each summary, delete
      * every expired detail and adjust counters; delete the summary if it is left
-     * with no approved or declined auths; checkpoint every
-     * {@code checkpointFrequency} summaries; and take a final checkpoint at the
-     * end.
+     * with no approved or declined auths; checkpoint once more than
+     * {@code checkpointFrequency} summaries have been processed since the last
+     * checkpoint (COBOL {@code >} comparison, line 160); and take a final
+     * checkpoint at the end.
      */
     public PurgeResult purge(LocalDate currentDate) {
         Objects.requireNonNull(currentDate, "currentDate");
@@ -149,6 +152,8 @@ public class AuthorizationPurgeService {
                 repository.updateSummary(summary);
             }
 
+            // Strictly-greater-than mirrors CBPAUP0C line 160 (and the R20
+            // spec): a checkpoint fires after checkpointFrequency + 1 summaries.
             if (processedSinceCheckpoint > checkpointFrequency) {
                 repository.checkpoint();
                 checkpoints++;

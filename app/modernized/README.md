@@ -37,8 +37,10 @@ Port of `app/app-authorization-ims-db2-mq/cbl/CBPAUP0C.cbl`.
   and its details, deletes details that are at least `expiryDays` old (default 5),
   adjusts the parent summary's approved/declined counters and amounts
   (lines 287-293), deletes a summary once it has no remaining approved or
-  declined auths (lines 156-158), and checkpoints every `checkpointFrequency`
-  summaries (default 5). The 9's-complement Julian `PA-AUTH-DATE-9C` encoding is
+  declined auths (lines 156-158), and checkpoints once more than
+  `checkpointFrequency` summaries have been processed since the last checkpoint
+  (default 5; the COBOL `>` comparison on line 160). The 9's-complement Julian
+  `PA-AUTH-DATE-9C` encoding is
   resolved to `java.time.LocalDate` at the model boundary so expiry uses
   `ChronoUnit.DAYS`.
 - Models: `AuthorizationSummary` (`CIPAUSMY`), `AuthorizationDetail`
