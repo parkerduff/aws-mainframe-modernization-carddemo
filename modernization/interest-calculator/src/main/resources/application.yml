@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: carddemo-interest-calculator
+  main:
+    # CBACT04C is a batch program, not a web server.
+    web-application-type: none
+
+logging:
+  level:
+    com.carddemo.interest: INFO
