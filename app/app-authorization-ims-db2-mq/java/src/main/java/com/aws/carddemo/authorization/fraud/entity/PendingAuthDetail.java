@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 public class PendingAuthDetail {
 
     @Id
-    @Column(name = "AUTH_KEY", length = 32, nullable = false)
+    @Column(name = "AUTH_KEY", length = 64, nullable = false)
     private String authKey;
 
     @Column(name = "CARD_NUM", length = 16, nullable = false)
