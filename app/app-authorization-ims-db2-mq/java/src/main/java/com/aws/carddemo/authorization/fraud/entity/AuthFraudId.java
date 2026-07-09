@@ -1,5 +1,6 @@
 package com.aws.carddemo.authorization.fraud.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -16,8 +17,10 @@ import java.util.Objects;
 @Embeddable
 public class AuthFraudId implements Serializable {
 
+    @Column(name = "CARD_NUM", length = 16, nullable = false)
     private String cardNum;
 
+    @Column(name = "AUTH_TS", nullable = false)
     private LocalDateTime authTs;
 
     public AuthFraudId() {
