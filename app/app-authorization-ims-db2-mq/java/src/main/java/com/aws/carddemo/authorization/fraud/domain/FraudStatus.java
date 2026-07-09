@@ -45,6 +45,6 @@ public enum FraudStatus {
      * <p>Sub-session 2 implements this logic.
      */
     public FraudStatus toggle() {
-        throw new UnsupportedOperationException("toggle() to be implemented by Sub-session 2");
+        return this == CONFIRMED ? REMOVED : CONFIRMED;
     }
 }
