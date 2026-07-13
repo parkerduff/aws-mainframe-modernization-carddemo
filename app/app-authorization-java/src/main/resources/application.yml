@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: app-authorization-java
+
+  # Default (local/dev) uses the embedded Artemis broker; the IBM MQ auto-config is
+  # excluded so it does not attempt to reach a real queue manager. The 'ibmmq' profile
+  # re-enables IBM MQ and excludes Artemis instead.
+  autoconfigure:
+    exclude:
+      - com.ibm.mq.spring.boot.MQAutoConfiguration
+
+  datasource:
+    url: jdbc:h2:mem:carddemo;DB_CLOSE_DELAY=-1;MODE=LEGACY
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.format_sql: true
+
+  h2:
+    console:
+      enabled: true
+
+  # Embedded ActiveMQ Artemis broker for local/dev (BR-10.2).
+  artemis:
+    mode: embedded
+    embedded:
+      enabled: true
+
+# CardDemo authorization settings.
+carddemo:
+  mq:
+    request-queue: AWS.M2.CARDDEMO.PAUTH.REQUEST
+    reply-queue: AWS.M2.CARDDEMO.PAUTH.REPLY
+  purge:
+    expiry-days: 5
+    enabled: true
+    # Daily at 02:00 (replaces the CBPAUP0J batch schedule).
+    cron: "0 0 2 * * *"
+
+logging:
+  level:
+    com.carddemo.authorization: INFO
+
