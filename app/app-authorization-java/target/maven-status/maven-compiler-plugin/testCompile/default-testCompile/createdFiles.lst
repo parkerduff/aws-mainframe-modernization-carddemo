@@ -1,0 +1,11 @@
+com/carddemo/authorization/domain/AuthResponseReasonTest.class
+com/carddemo/authorization/messaging/AuthorizationMessageCodecTest.class
+com/carddemo/authorization/service/decision/RuleBasedAuthorizationDecisionEngineTest.class
+com/carddemo/authorization/AuthorizationApplicationTests.class
+com/carddemo/authorization/service/fraud/FraudServiceRollbackIT.class
+com/carddemo/authorization/batch/ExpiredAuthorizationPurgeServiceIT.class
+com/carddemo/authorization/messaging/AuthorizationJmsIT.class
+com/carddemo/authorization/web/AuthorizationViewControllerIT.class
+com/carddemo/authorization/TestFixtures.class
+com/carddemo/authorization/service/fraud/FraudServiceTest.class
+com/carddemo/authorization/service/AuthorizationRequestServiceTest.class
