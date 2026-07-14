@@ -21,6 +21,7 @@ This extension provides the following capabilities:
 
 - **System Date Inquiry via MQ**: Query the system date through an MQ request/response pattern (CDRD transaction)
 - **Account Details Inquiry via MQ**: Retrieve account information through MQ channels (CDRA transaction)
+- **Intraday Liquidity Inquiry via MQ**: Retrieve an account's intraday liquidity position (available credit, intraday inflows/outflows, net change) for a supplied time window, sourced from the `ACCTDATA` and `TRANSACT` VSAM files (CDRL transaction)
 - **Asynchronous Processing**: Demonstrates asynchronous communication patterns between systems
 - **MQ Integration**: Shows how to integrate MQ with existing VSAM-based applications
 
@@ -32,6 +33,7 @@ This extension provides the following capabilities:
 |:------------|:---------|:--------------------------------|:---------------------------------------|
 | CDRD        | CODATE01 | Inquire System Date via MQ      | Demonstrates MQ request/response pattern |
 | CDRA        | COACCT01 | Inquire account details via MQ  | Demonstrates MQ request/response pattern |
+| CDRL        | COLIQ01  | Inquire intraday liquidity via MQ | Reads ACCTDATA and browses TRANSACT for the requested intraday window |
 
 ### Directory Structure
 
@@ -52,6 +54,8 @@ This extension provides the following capabilities:
      ```
      DEFINE QLOCAL('CARDDEMO.REQUEST.QUEUE') REPLACE
      DEFINE QLOCAL('CARDDEMO.RESPONSE.QUEUE') REPLACE
+     DEFINE QLOCAL('CARDDEMO.LIQUIDITY.REQUEST.QUEUE') REPLACE
+     DEFINE QLOCAL('CARD.DEMO.REPLY.LIQ') REPLACE
      ```
 
 2. **Compile Programs**
@@ -62,6 +66,7 @@ This extension provides the following capabilities:
      ```
      DEFINE TRANSACTION(CDRD) GROUP(CARDDEMO) PROGRAM(CODATE01)
      DEFINE TRANSACTION(CDRA) GROUP(CARDDEMO) PROGRAM(COACCT01)
+     DEFINE TRANSACTION(CDRL) GROUP(CARDDEMO) PROGRAM(COLIQ01)
      ```
 
 4. **Configure CICS-MQ Connection**
@@ -70,7 +75,11 @@ This extension provides the following capabilities:
      DEFINE MQCONN(MQ01) GROUP(CARDDEMO)
      DEFINE MQQUEUE(CARDREQ) GROUP(CARDDEMO) QNAME(CARDDEMO.REQUEST.QUEUE)
      DEFINE MQQUEUE(CARDRES) GROUP(CARDDEMO) QNAME(CARDDEMO.RESPONSE.QUEUE)
+     DEFINE MQQUEUE(CARDLIQR) GROUP(CARDDEMO) QNAME(CARDDEMO.LIQUIDITY.REQUEST.QUEUE)
+     DEFINE MQQUEUE(CARDLIQS) GROUP(CARDDEMO) QNAME(CARD.DEMO.REPLY.LIQ)
      ```
+
+   The `COLIQ01` program/transaction and its MQ queue definitions are provided in `csd/CRDDEMOL.csd`.
 
 ## Usage
 
@@ -91,6 +100,32 @@ The CDRA transaction demonstrates how to retrieve account information via MQ:
 2. The transaction sends a request message containing the account number to the request queue
 3. A listener program retrieves the account details from VSAM and sends them to the response queue
 4. The CDRA transaction retrieves and displays the account information
+
+### Intraday Liquidity Inquiry (CDRL)
+
+The CDRL transaction (program `COLIQ01`) answers intraday liquidity reporting queries via MQ:
+
+1. A distributed client puts a request message on `CARDDEMO.LIQUIDITY.REQUEST.QUEUE` containing an account id (11 digits) and an intraday time window (start and end timestamps in the 26-character `TRAN-PROC-TS` format).
+2. `COLIQ01` is triggered, reads the account record from the `ACCTDATA` VSAM file, and browses the `TRANSACT` VSAM file, summing `TRAN-AMT` for every transaction whose `TRAN-PROC-TS` falls within the requested window.
+3. It computes the liquidity position:
+   - `current available liquidity = ACCT-CREDIT-LIMIT - ACCT-CURR-BAL`
+   - `available cash = ACCT-CASH-CREDIT-LIMIT - ACCT-CURR-CYC-DEBIT`
+   - intraday debit total (sum of positive `TRAN-AMT`), intraday credit total (sum of absolute negative `TRAN-AMT`), and net liquidity change (`credit - debit`)
+   - `opening available liquidity = current available liquidity + net balance change`
+4. It builds a `LIQ-RESPONSE-MSG` (copybook `CVLIQ01Y`) and puts it on the reply queue `CARD.DEMO.REPLY.LIQ`.
+
+Example flow:
+
+```
+client  -> CARDDEMO.LIQUIDITY.REQUEST.QUEUE :
+           INQL 00000000011 2022-07-19-00.00.00.000000
+                            2022-07-19-23.59.59.999999
+COLIQ01 -> reads ACCTDATA(00000000011), browses TRANSACT for the window
+COLIQ01 -> CARD.DEMO.REPLY.LIQ :
+           acct=00000000011 as-of=2022-07-19-23.59.59.999999
+           open-avail=... debit=... credit=... net=...
+           curr-avail=... avail-cash=... rc=00
+```
 
 ## Technical Details
 
@@ -126,6 +161,38 @@ The CDRA transaction demonstrates how to retrieve account information via MQ:
    05 RESPONSE-ID         PIC X(8).
    05 ACCOUNT-DATA        PIC X(300).
 ```
+
+**Liquidity Request Message Format** (copybook `CVLIQ01Y`):
+```
+01 LIQ-REQUEST-MSG.
+   05 LIQ-REQ-FUNC        PIC X(04) VALUE 'INQL'.
+   05 LIQ-REQ-ACCT-ID     PIC 9(11).
+   05 LIQ-REQ-START-TS    PIC X(26).
+   05 LIQ-REQ-END-TS      PIC X(26).
+   05 FILLER              PIC X(933).
+```
+
+**Liquidity Response Message Format** (copybook `CVLIQ01Y`):
+```
+01 LIQ-RESPONSE-MSG.
+   05 LIQ-RESP-ACCT-ID          PIC 9(11).
+   05 LIQ-RESP-AS-OF-TS         PIC X(26).
+   05 LIQ-RESP-OPEN-AVAIL-LIQ   PIC S9(10)V99.
+   05 LIQ-RESP-INTRADAY-DEBIT   PIC S9(12)V99.
+   05 LIQ-RESP-INTRADAY-CREDIT  PIC S9(12)V99.
+   05 LIQ-RESP-INTRADAY-NET     PIC S9(12)V99.
+   05 LIQ-RESP-CURR-AVAIL-LIQ   PIC S9(10)V99.
+   05 LIQ-RESP-AVAIL-CASH       PIC S9(10)V99.
+   05 LIQ-RESP-RETURN-CODE      PIC X(02).
+   05 LIQ-RESP-STATUS-MSG       PIC X(50).
+```
+Return codes: `00` success, `01` account not found, `02` invalid request parameters.
+
+**Liquidity Queue Names:**
+| Purpose  | Queue Name                          |
+|:---------|:------------------------------------|
+| Request  | `CARDDEMO.LIQUIDITY.REQUEST.QUEUE`  |
+| Response | `CARD.DEMO.REPLY.LIQ`               |
 
 ### Integration Patterns
 
