@@ -292,6 +292,7 @@ Admin users can perform the following functions:
 | CTLI        | COTRTLI | COTRTLIC | Tran Type list/update/delete    | Db2: Transaction Type Mgmt         | Demonstrates cursor and delete in Db2                     |
 | CDRD        |         | CODATE01 | Inquire System Date via MQ      | MQ Integration                     | Demonstrates MQ request/response pattern                  |
 | CDRA        |         | COACCT01 | Inquire account details via MQ  | MQ Integration                     | Demonstrates MQ request/response pattern                  |
+| CDRL        |         | COLIQ01  | Inquire intraday liquidity via MQ | MQ Integration                   | MQ request/response; reads ACCTDATA and browses TRANSACT for the requested intraday window |
 
 #### Batch Components
 
